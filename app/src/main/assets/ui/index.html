@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>World Audio</title>
+<style>
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0 auto; padding: 14px 14px 48px; max-width: 640px; background: #10131a; color: #f2f4f8; font: 14px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 21px; margin: 0 0 3px; letter-spacing: .2px; }
+  .sub { color: #aab4c6; font-size: 12px; margin-bottom: 15px; }
+  .status { padding: 9px 10px; border-radius: 9px; background: #202634; color: #d8e2f1; margin-bottom: 12px; min-height: 38px; }
+  button { border: 0; border-radius: 9px; padding: 13px 12px; color: #fff; font-weight: 700; cursor: pointer; width: 100%; background: #5b66e8; margin-bottom: 8px; }
+  button.secondary { background: #2b3343; }
+  button.stop { background: #873f50; }
+  label { display: flex; justify-content: space-between; gap: 12px; margin: 12px 0 4px; color: #dbe2ee; }
+  input[type=range] { width: 100%; accent-color: #8b93ff; }
+  .tiny { color: #9da8ba; font-size: 11px; margin-top: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+  .row input { accent-color: #8b93ff; }
+  .pill { display:inline-block; border:1px solid #394256; padding:2px 7px; border-radius:20px; font-size:10px; color:#bac5d8; }
+
+  .section { margin: 14px 0 6px; font-size: 12px; font-weight: 700; color: #aab4c6; text-transform: uppercase; letter-spacing: .6px; }
+  #radar { display: block; width: 100%; height: 260px; background: #151a24; border-radius: 12px; touch-action: none; cursor: grab; }
+  #stems { margin-top: 8px; }
+  .stem { display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+  .stem:hover { background: #171c27; }
+  .stem.sel { background: #1b2130; border-color: #3a4562; }
+  .stem .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .stem .nm { flex: 1; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stem .meter { width: 46px; height: 6px; border-radius: 4px; background: #232a39; overflow: hidden; flex: none; }
+  .stem .meter i { display: block; height: 100%; width: 0; background: #8b93ff; }
+  button.mini { width: auto; margin: 0; padding: 8px 10px; font-size: 11px; border-radius: 8px; background: #2b3343; color: #aab4c6; min-width: 34px; }
+  button.mini.on { background: #5b66e8; color: #fff; }
+  button.mini.warn { background: #873f50; color: #fff; }
+  button.mini.pin { background: #b8873a; color: #fff; }
+  #detail { background: #151a24; border-radius: 10px; padding: 4px 11px 10px; margin-top: 6px; }
+  #detail label { margin-top: 8px; font-size: 13px; }
+  #detailTitle { margin-top: 8px; font-size: 12px; color: #aab4c6; }
+  #detailTitle b { color: #f2f4f8; }
+  #scenes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #scenes button { margin: 0; padding: 9px 4px; font-size: 12px; background: #2b3343; color: #cfd7e6; }
+  #scenes button.on { background: #5b66e8; color: #fff; }
+  #sceneDesc { color: #aab4c6; font-size: 12px; margin: 8px 2px 0; min-height: 34px; }
+  #spots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  button.chip { width: auto; margin: 0; padding: 8px 11px; font-size: 12px; border-radius: 14px; background: #202634; color: #cfd7e6; border: 1px solid #394256; }
+  button.chip:hover { background: #2b3343; }
+  .hintline { color: #8a96ab; font-size: 11px; margin-top: 6px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cols button { margin: 0; }
+  #pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 210px; margin: 10px auto 2px; }
+  #pad button { margin: 0; padding: 14px 0; font-size: 18px; background: #2b3343; color: #dbe2ee; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #pad button.down { background: #5b66e8; }
+  .stem { padding: 9px 6px; }
+  input[type=range] { height: 30px; }
+  select { width: 100%; background: #202634; color: #f2f4f8; border: 1px solid #394256; border-radius: 8px; padding: 8px 9px; font: inherit; }
+</style>
+</head>
+<body>
+  <h1>World Audio <span class="pill">MOBILE 0.6</span></h1>
+  <div class="sub">Place the sound in a virtual world.</div>
+  <div id="status" class="status">Waiting for the YouTube page to load…</div>
+  <div class="cols"><button id="start">Start World Audio</button>
+  <button id="stop" class="stop">Stop</button></div>
+
+  <div class="section">Where are you?</div>
+  <div id="scenes"></div>
+  <div id="sceneDesc"></div>
+
+  <div class="section">Sound map — drag a dot, or yourself</div>
+  <canvas id="radar"></canvas>
+  <div id="spots"></div>
+  <div id="pad"><button data-k="q">⟲</button><button data-k="w">▲</button><button data-k="e">⟳</button><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
+  <div class="hintline">Drag the white arrow, or hold the pad to walk (▲▼◀▶) and turn (⟲⟳). Walking needs World Lock on.</div>
+  <div id="stems"></div>
+
+  <div id="detail">
+    <div id="detailTitle">Adjusting: <b id="detailName">–</b></div>
+    <label for="sAngle">Direction <strong id="sAngleVal">0°</strong></label>
+    <input id="sAngle" type="range" min="-180" max="180" value="0" step="1">
+    <label for="sDist">Distance <strong id="sDistVal">2.0 m</strong></label>
+    <input id="sDist" type="range" min="1" max="12" value="2" step="0.5">
+    <label for="sVol">Volume <strong id="sVolVal">100%</strong></label>
+    <input id="sVol" type="range" min="0" max="150" value="100" step="5">
+  </div>
+
+  <div class="section">World</div>
+  <div class="row"><input id="auto" type="checkbox" checked><label for="auto" style="margin:0">AI auto-placement <span id="autoText">ON</span></label></div>
+  <label for="spread">Stage width <strong id="spreadVal">50%</strong></label>
+  <input id="spread" type="range" min="0" max="100" value="50" step="5">
+  <label for="room">Room</label>
+  <select id="room"></select>
+  <label for="reverb">Room reverb <strong id="reverbVal">100%</strong></label>
+  <input id="reverb" type="range" min="0" max="150" value="100" step="5">
+  <label for="volume">Master volume <strong id="volumeVal">100%</strong></label>
+  <input id="volume" type="range" min="0" max="150" value="100" step="5">
+  <div class="row"><input id="lock" type="checkbox" checked><label for="lock" style="margin:0">World Lock <span id="lockText">ON</span></label></div>
+  <div class="row"><input id="sway" type="checkbox" checked><label for="sway" style="margin:0">Natural head sway <span id="swayText">ON</span></label></div>
+  <label for="turn">Turn listener <strong id="turnVal">0°</strong></label>
+  <input id="turn" type="range" min="-180" max="180" value="0" step="5">
+  <label for="push">Push everything away <strong id="pushVal">+0 m</strong></label>
+  <input id="push" type="range" min="0" max="8" value="0" step="0.5">
+  <button id="reset" class="secondary" style="margin-top:12px">Reset World</button>
+  <div class="tiny">Use headphones for the full 3D effect. Works with YouTube and YouTube Music playing in the player above. Copy-protected streams (like Spotify) can't be processed, so they play normally. Keep the app open while listening.</div>
+<script src="ui.js"></script>
+</body>
+</html>
